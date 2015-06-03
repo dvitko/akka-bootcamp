@@ -9,31 +9,46 @@ namespace WinTail
     /// </summary>
     class ConsoleReaderActor : UntypedActor
     {
+        public const string StartCommand = "start";
         public const string ExitCommand = "exit";
-        private IActorRef _consoleWriterActor;
-
-        public ConsoleReaderActor(IActorRef consoleWriterActor)
-        {
-            _consoleWriterActor = consoleWriterActor;
-        }
 
         protected override void OnReceive(object message)
         {
-            var read = Console.ReadLine();
-            if (!string.IsNullOrEmpty(read) && String.Equals(read, ExitCommand, StringComparison.OrdinalIgnoreCase))
+            if (message.Equals(StartCommand))
             {
-                // shut down the system (acquire handle to system via
-                // this actors context)
+                DoPrintInstructions();
+            }
+
+            GetAndValidateInput();
+        }
+
+        #region Internal methods
+
+        private void DoPrintInstructions()
+        {
+            Console.WriteLine("Please provide the URI of a log file on disk.\n");
+        }
+
+        /// <summary>
+        /// Reads input from console, validates it, then signals appropriate response
+        /// (continue processing, error, success, etc.).
+        /// </summary>
+        private void GetAndValidateInput()
+        {
+            var message = Console.ReadLine();
+            if (!string.IsNullOrEmpty(message) && String.Equals(message, ExitCommand, StringComparison.OrdinalIgnoreCase))
+            {
+                // If user typed exit than Shutdown the entire Actor System (Allows the process to exit)
                 Context.System.Shutdown();
                 return;
             }
 
-            // send input to the console writer to process and print
-            // YOU NEED TO FILL IN HERE
+            // otherwise, just send the messsage off to validation
+            Context.ActorSelection("akka://MyActorSystem/user/validationActor").Tell(message);
 
-            // continue reading messages from the console
-            // YOU NEED TO FILL IN HERE
         }
+        
+        #endregion
 
     }
 }
